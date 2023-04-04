@@ -1,0 +1,22 @@
+Integrated Robot Dog Control Program
+
+# Feature
+Integrated line following, obstacle avoidance, apriltag recognition into one file
+
+# User Guide
+1. Connect to WIFI, HW-188FFA27
+2. Connect to VNC, ip address 192.168.149.1, pwd: raspberry
+3. Locate the file AllInOne.py at /463Files/src/test_files 
+Or by command "roscd test_files"
+4. Run file using "rosrun AllInOne.py"
+5. Edit using vim, nano, or rosed as needed
+
+# Problems
+1. Object avoidance logic does not work well with line following, conflicts could arise
+2. Line following does terrible on black lines
+3. Apriltag recognition does not have any effect on movement now
+
+# Where To Look Into 
+Line 89, tagAnalysis function, recognizes a tag, print it. Could add more to that function.
+Line 477, image_callback function, controls the workflow of image processing.
+Line 314, move function, controls how the dog moves. The logic of the function needs an overhaul.
