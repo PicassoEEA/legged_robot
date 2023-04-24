@@ -1,7 +1,10 @@
 #!/usr/bin/python3
 # coding=utf8
-# Date:2021/09/27
-# Author:hiwonder
+# Date:2023/02/18
+# Author:Xiteng_Yao
+# 
+# The code was inspired by the source codes of the PuppyPi product. 
+# The code is completely rewritten to integrate all the functions of the robot, including the functions of the camera and LiDar
 
 import math
 import time
@@ -70,12 +73,12 @@ def apriltagDetect(img):
             coordinate=np.matmul(P,np.array([[0],[0],[0],[1]])).flatten()
             print('coordinate = ',coordinate)    
 
-            # corners = np.rint(detection.corners)  # 获取四个角点
+            # corners = np.rint(detection.corners)  # get four corners
             # cv2.drawContours(img, [np.array(corners, np.int)], -1, (0, 255, 255), 5, cv2.LINE_AA)
-            tag_family = str(detection.tag_family, encoding='utf-8')  # 获取tag_family
+            tag_family = str(detection.tag_family, encoding='utf-8')  # get tag_family
             times = 0
             if tag_family == 'tag36h11':
-                tag_id = str(detection.tag_id)  # 获取tag_id
+                tag_id = str(detection.tag_id)  # get tag_id
                 return tag_id
             else:
                 return None
@@ -93,7 +96,7 @@ def tagAnalysis(img):
     if not __isRunning:
         return img
     
-    tag_id = apriltagDetect(img) # apriltag检测
+    tag_id = apriltagDetect(img) # apriltag detection
     print("detecting tag",tag_id)
     if tag_id is not None and not haved_detect:
         haved_detect = True
@@ -105,10 +108,10 @@ class Combined_Control:
         rospy.init_node(name, anonymous=True)
         rospy.on_shutdown(self.cleanup)
         self.name = name
-        self.running_mode = 1 # 1：雷达避障模式  2：雷达警卫模式，
-        self.threshold = 0.3 # meters  距离阈值
-        self.scan_angle = math.radians(90)  # radians  向前的扫描角度
-        self.speed = 0.12 # 单位米，避障模式的速度
+        self.running_mode = 1  # 1: LiDAR obstacle avoidance mode, 2: LiDAR guard mode
+        self.threshold = 0.3  # Distance threshold in meters
+        self.scan_angle = math.radians(90)  # Forward scan angle in radians
+        self.speed = 0.12  # Obstacle avoidance mode speed in meters
         self.last_act = 0
         self.timestamp = 0
         self.lock = threading.RLock()
@@ -119,70 +122,72 @@ class Combined_Control:
         self.buzzer_pub = rospy.Publisher('/sensor/buzzer', Float32, queue_size=1)
         self.buzzer_pub.publish(0.1)
         
-    def lidar_callback(self, lidar_data:sensor_msg.LaserScan):
-        twist = geo_msg.Twist()
-        max_index = int(math.radians(MAX_SCAN_ANGLE / 2.0) / lidar_data.angle_increment)
-        left_ranges = lidar_data.ranges[:max_index]
-        right_ranges = lidar_data.ranges[::-1][:max_index]
-        
-        with self.lock:
-            #angle = math.atan(self.car_width / self.threshold)
-            angle = self.scan_angle / 2
-            angle_index = int(angle / lidar_data.angle_increment + 0.50)
+    def lidar_callback(self, lidar_data: sensor_msg.LaserScan):
+        twist = geo_msg.Twist()  # Initialize twist message
+        max_index = int(math.radians(MAX_SCAN_ANGLE / 2.0) / lidar_data.angle_increment)  # Calculate maximum index for left and right ranges
+        left_ranges = lidar_data.ranges[:max_index]  # Get left ranges
+        right_ranges = lidar_data.ranges[::-1][:max_index]  # Get right ranges
+
+        with self.lock:  # Ensure thread safety
+            angle = self.scan_angle / 2  # Calculate half of the scan angle
+            angle_index = int(angle / lidar_data.angle_increment + 0.50)  # Calculate angle index
             
+            # Restrict left and right ranges to the angle index
             left_ranges, right_ranges = left_ranges[:angle_index], right_ranges[:angle_index]
-            
+
+            # If running in obstacle avoidance mode (mode 1) and the current time is greater than the timestamp
             if self.running_mode == 1 and self.timestamp <= time.time():
-                min_index_left, min_index_right = np.nanargmin(np.array(left_ranges)),  np.nanargmin(np.array(right_ranges))
+                # Find the minimum distance and corresponding angle for left and right ranges
+                min_index_left, min_index_right = np.nanargmin(np.array(left_ranges)), np.nanargmin(np.array(right_ranges))
                 min_dist_left, min_dist_right = left_ranges[min_index_left], right_ranges[min_index_right]
                 angle_left = lidar_data.angle_increment * min_index_left
                 angle_right = lidar_data.angle_increment * min_index_right
-                # print(min_dist_left, min_dist_right)
-                
+
                 shared_data[0] = 1
-                
-                if min_dist_left <= self.threshold and min_dist_right > self.threshold: # 左侧有障碍
-                    twist.linear.x = self.speed / 6
+
+                # If an obstacle is detected on the left side
+                if min_dist_left <= self.threshold and min_dist_right > self.threshold:
+                    twist.linear.x = self.speed / 6  # Reduce linear speed
                     max_angle = math.radians(90)
                     w = self.speed * 3
-                    twist.angular.z = -w
-                    # self.velocity_pub.publish(twist)
-                    self.timestamp = time.time() + (max_angle / w / 2)
-                elif min_dist_left <= self.threshold and min_dist_right <= self.threshold: # 两侧都有障碍
-                    twist.linear.x = self.speed / 6
+                    twist.angular.z = -w  # Rotate right
+                    self.timestamp = time.time() + (max_angle / w / 2)  # Update timestamp
+
+                # If obstacles are detected on both sides
+                elif min_dist_left <= self.threshold and min_dist_right <= self.threshold:
+                    twist.linear.x = self.speed / 6  # Reduce linear speed
                     w = self.speed * 3
-                    twist.angular.z = w
-                    # if self.last_act != 0:
-                    #     twist.angular.z = -w
-                    # else:
-                    #     self.last_act = 1
-                    # self.velocity_pub.publish(twist)
-                    self.timestamp = time.time() + (math.radians(30) / w / 2)
-                elif min_dist_left > self.threshold and min_dist_right <= self.threshold: # 右侧有障碍
-                    twist.linear.x = self.speed / 6
+                    twist.angular.z = w  # Rotate left
+                    self.timestamp = time.time() + (math.radians(30) / w / 2)  # Update timestamp
+
+                # If an obstacle is detected on the right side
+                elif min_dist_left > self.threshold and min_dist_right <= self.threshold:
+                    twist.linear.x = self.speed / 6  # Reduce linear speed
                     max_angle = math.radians(90)
                     w = self.speed * 3
-                    twist.angular.z = w
-                    # if self.last_act != 0:
-                    #     twist.angular.z = -w
-                    # else:
-                    #     self.last_act = 2
-                    # self.velocity_pub.publish(twist)
-                    self.timestamp = time.time() + (max_angle / w /2)
-                else: # 没有障碍
+                    twist.angular.z = w  # Rotate left
+                    self.timestamp = time.time() + (max_angle / w / 2)  # Update timestamp
+
+                # If no obstacles are detected
+                else:
                     self.last_act = 0
-                    twist.linear.x = self.speed
-                    twist.angular.z = 0
-                    # self.velocity_pub.publish(twist)
+                    twist.linear.x = self.speed  # Maintain linear speed
+                    twist.angular.z = 0  # Do not rotate
 
                     shared_data[0] = 0
-                
+
                 shared_data[1] = twist
+
+            # If running in guard mode (mode 2)
             elif self.running_mode == 2:
-                min_index_left, min_index_right = np.nanargmin(np.array(left_ranges)),  np.nanargmin(np.array(right_ranges))
+                # Find the minimum distance for left and right ranges
+                min_index_left, min_index_right = np.nanargmin(np.array(left_ranges)), np.nanargmin(np.array(right_ranges))
                 min_dist_left, min_dist_right = left_ranges[min_index_left], right_ranges[min_index_right]
-                if min_dist_left <= self.threshold or min_dist_right <= self.threshold: # 检测到障碍
-                    self.buzzer_pub.publish(0.1)
+                
+                # If an obstacle is detected on either side
+                if min_dist_left <= self.threshold or min_dist_right <= self.threshold:
+                    self.buzzer_pub.publish(0.1)  # Publish to buzzer to alert about detected obstacle
+
 
     def cleanup(self):
         # global is_shutdown
