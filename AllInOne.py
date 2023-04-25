@@ -188,45 +188,45 @@ class Combined_Control:
                 if min_dist_left <= self.threshold or min_dist_right <= self.threshold:
                     self.buzzer_pub.publish(0.1)  # Publish to buzzer to alert about detected obstacle
 
-
     def cleanup(self):
-        # global is_shutdown
-        # is_shutdown = True
+        # This function is called when the node is shutting down
+        # Unregister the lidar subscriber
         self.lidar_sub.unregister()
+        # Publish a zero velocity command to stop the robot
         self.velocity_pub.publish(geo_msg.Twist())
         print('is_shutdown')
 
-is_shutdown = False
+is_shutdown = False  # Global flag to check if the node is shutting down
 
-PuppyMove = {'x':0, 'y':0, 'yaw_rate':0}
+PuppyMove = {'x':0, 'y':0, 'yaw_rate':0}  # Dictionary to store the robot's movement commands
 
+color_range_list = {}  # Dictionary to store color range lists
 
-color_range_list = {}
+__isRunning = False  # Flag to check if the node is running
+__target_color = ''  # Variable to store the target color
+org_image_sub_ed = False  # Flag to check if the original image is subscribed
 
-__isRunning = False
-__target_color = ''
-org_image_sub_ed = False
+line_centerx = -1  # Center x-coordinate of the detected line
+img_centerx = 320  # Center x-coordinate of the image
 
-
-line_centerx = -1 # 线条中心坐标
-img_centerx = 320
-
-roi = [ # [ROI, weight]
-        (240, 280,  0, 640, 0.1), 
-        (320, 360,  0, 640, 0.2), 
+# Region of interest (ROI) and corresponding weights for line detection
+roi = [
+        (240, 280,  0, 640, 0.1),
+        (320, 360,  0, 640, 0.2),
         (400, 440,  0, 640, 0.7)
        ]
-roi = [ # [ROI, weight]
-        (120, 140,  0, 320, 0.1), 
-        (160, 180,  0, 320, 0.2), 
+roi = [
+        (120, 140,  0, 320, 0.1),
+        (160, 180,  0, 320, 0.2),
         (200, 220,  0, 320, 0.7)
        ]
 
 roi_h1 = roi[0][0]
 roi_h2 = roi[1][0] - roi[0][0]
 roi_h3 = roi[2][0] - roi[1][0]
-roi_h_list = [roi_h1, roi_h2, roi_h3]
+roi_h_list = [roi_h1, roi_h2, roi_h3]  # Heights of the ROIs
 
+# Dictionary containing RGB values for different colors
 range_rgb = {
     'red': (0, 0, 255),
     'blue': (255, 0, 0),
@@ -234,56 +234,64 @@ range_rgb = {
     'black': (0, 0, 0),
     'white': (255, 255, 255),
 }
-draw_color = range_rgb["black"]
+draw_color = range_rgb["black"]  # Default draw color is black
+
+lock = RLock()  # Reentrant lock for thread synchronization
 
 
-lock = RLock()
-
-
-# 变量重置
+# Function to reset variables
 def reset():
     global draw_color
     global __target_color
     global color_range_list
     global line_centerx
     with lock:
+        # Turn off RGB display
         turn_off_rgb()
+        # Reset target color
         __target_color = 'None'
+        # Reset line center x-coordinate
         line_centerx = -1
+        # Reset draw color to black
         draw_color = range_rgb["black"]
+        # Update color range list from ROS parameter server
         color_range_list = rospy.get_param('/lab_config_manager/color_range_list')
 
+        # Reset robot's movement commands
         PuppyMove['x'] = 0
         PuppyMove['yaw_rate'] = math.radians(0)
         PuppyVelocityPub.publish(x=PuppyMove['x'], y=PuppyMove['y'], yaw_rate=PuppyMove['yaw_rate'])
 
-
-# 初始位置
+# Function to initialize robot's position
 def initMove(delay=True):
     global GaitConfig
+    # Set initial movement commands
     PuppyMove['x'] = 0
     PuppyMove['yaw_rate'] = math.radians(0)
     PuppyVelocityPub.publish(x=PuppyMove['x'], y=PuppyMove['y'], yaw_rate=PuppyMove['yaw_rate'])
     rospy.sleep(0.2)
+    # Call go_home service to move robot to initial position
     rospy.ServiceProxy('/puppy_control/go_home', Empty)()
-    
-    # print(PuppyPose["stance_x"], PuppyPose["stance_y"], PuppyPose["x_shift"], PuppyPose["height"], PuppyPose["roll"], PuppyPose["pitch"], PuppyPose["yaw"])
-    
+
+    # Set initial robot pose parameters
     PuppyPose["height"] = 0
     PuppyPose["pitch"] = -0.15
-    
-    PuppyPosePub.publish(stance_x=PuppyPose['stance_x'], stance_y=PuppyPose['stance_y'], x_shift=PuppyPose['x_shift']
-            ,height=PuppyPose['height'], roll=PuppyPose['roll'], pitch=PuppyPose['pitch'], yaw=PuppyPose['yaw'], run_time = 500)
-    
+
+    # Publish initial robot pose
+    PuppyPosePub.publish(stance_x=PuppyPose['stance_x'], stance_y=PuppyPose['stance_y'], x_shift=PuppyPose['x_shift'],
+                         height=PuppyPose['height'], roll=PuppyPose['roll'], pitch=PuppyPose['pitch'], yaw=PuppyPose['yaw'], run_time=500)
+
     rospy.sleep(0.2)
-    PuppyGaitConfigPub.publish(overlap_time = GaitConfig['overlap_time'], swing_time = GaitConfig['swing_time']
-                    , clearance_time = GaitConfig['clearance_time'], z_clearance = GaitConfig['z_clearance'])
-                    
+    # Publish initial gait configuration
+    PuppyGaitConfigPub.publish(overlap_time=GaitConfig['overlap_time'], swing_time=GaitConfig['swing_time'],
+                               clearance_time=GaitConfig['clearance_time'], z_clearance=GaitConfig['z_clearance'])
+
     with lock:
         pass
     if delay:
         rospy.sleep(0.5)
-
+        
+# Function to turn off RGB display
 def turn_off_rgb():
     led = Led()
     led.index = 0
@@ -295,6 +303,7 @@ def turn_off_rgb():
     led.index = 1
     rgb_pub.publish(led)
 
+# Function to turn on RGB display with specified color
 def turn_on_rgb(color):
     led = Led()
     led.index = 0
@@ -307,13 +316,13 @@ def turn_on_rgb(color):
     rgb_pub.publish(led)
     rospy.sleep(0.1)
 
-
-# app初始化调用
+# Function called during app initialization
 def init():
-    print("visual patrol Init")
+    print("Visual patrol Init")
+    # Initialize robot's position and movement commands
     initMove(True)
+    # Reset global variables related to target color, line center, and color range list
     reset()
-
 
 
 def move():
