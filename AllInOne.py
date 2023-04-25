@@ -30,14 +30,16 @@ from puppy_control.msg import Velocity, Pose, Gait
 
 from puppy_pi import Misc, apriltag
 
+
+# Shared data array
 shared_data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 ROS_NODE_NAME = 'combined_control'
 
-# parameter for LiDar
-MAX_SCAN_ANGLE = 360 # degrees of LiDar scan. If needed, minus a certain number from this 
+# Parameter for LiDAR
+MAX_SCAN_ANGLE = 360  # degrees of LiDAR scan. If needed, minus a certain number from this
 
-# variables for apriltag detections
+# Variables for AprilTag detections
 tag_id = None
 haved_detect = False
 
@@ -45,59 +47,62 @@ __isRunning = False
 
 org_image_sub_ed = False
 
-
 action_finish = True
 
 lock = RLock()
-# parameters for apriltag camera
 
+# Parameters for AprilTag camera
 detector = apriltag.Detector(searchpath=apriltag._get_demo_searchpath())
-camera_intrinsic = np.matrix([  [619.063979, 0,          302.560920],
-                                [0,          613.745352, 237.714934],
-                                [0,          0,          1]])
+camera_intrinsic = np.matrix([[619.063979, 0, 302.560920],
+                              [0, 613.745352, 237.714934],
+                              [0, 0, 1]])
 
 times = 0
-def apriltagDetect(img):  
+
+# Function for AprilTag detection
+def apriltagDetect(img):
     global times
     global coordinate
 
+    # Convert the image to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+    # Detect AprilTags in the grayscale image
     detections = detector.detect(gray, return_image=False)
     if len(detections) != 0:
         for detection in detections:
-            M,e0,e1 = detector.detection_pose(detection,[camera_intrinsic.item(0,0), camera_intrinsic.item(1,1),
-                                                                camera_intrinsic.item(0,2), camera_intrinsic.item(1,2)],
-                                                                0.033)
-                    
-            P = M[:3,:4]
-            coordinate=np.matmul(P,np.array([[0],[0],[0],[1]])).flatten()
-            print('coordinate = ',coordinate)    
+            # Compute the pose of the detected AprilTag
+            M, e0, e1 = detector.detection_pose(detection, [camera_intrinsic.item(0, 0), camera_intrinsic.item(1, 1),
+                                                            camera_intrinsic.item(0, 2), camera_intrinsic.item(1, 2)],
+                                                0.033)
 
-            # corners = np.rint(detection.corners)  # get four corners
-            # cv2.drawContours(img, [np.array(corners, np.int)], -1, (0, 255, 255), 5, cv2.LINE_AA)
-            tag_family = str(detection.tag_family, encoding='utf-8')  # get tag_family
-            times = 0
-            if tag_family == 'tag36h11':
+            # Extract the position of the detected AprilTag
+            P = M[:3, :4]
+            coordinate = np.matmul(P, np.array([[0], [0], [0], [1]])).flatten()
+            print('coordinate = ', coordinate)
+
+            # Check if the detected AprilTag belongs to the 'tag36h11' family
+            if str(detection.tag_family, encoding='utf-8') == 'tag36h11':
                 tag_id = str(detection.tag_id)  # get tag_id
                 return tag_id
             else:
                 return None
-            
     else:
         times += 1
         if times >= 3:
             coordinate = None
         return None
 
+# Function for analyzing AprilTag detections in the image
 def tagAnalysis(img):
     global tag_id
     global haved_detect
 
     if not __isRunning:
         return img
-    
-    tag_id = apriltagDetect(img) # apriltag detection
-    print("detecting tag",tag_id)
+
+    tag_id = apriltagDetect(img)  # AprilTag detection
+    print("detecting tag", tag_id)
     if tag_id is not None and not haved_detect:
         haved_detect = True
     cv2.putText(img, tag_id, (10, img.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 255), 3)
@@ -324,7 +329,6 @@ def init():
     # Reset global variables related to target color, line center, and color range list
     reset()
 
-
 def move():
     global PuppyMove
     global draw_color
@@ -334,7 +338,9 @@ def move():
     while True:
         if __isRunning:
             
+            # If there's an obstacle detected or no line detected, execute this loop
             while line_centerx == -1 or shared_data[0] == 1:
+                # If an obstacle is detected, execute this loop
                 while shared_data[0] == 1:
                     # node.velocity_pub.publish(shared_data[1])
                     print("obstacle detected, avoiding")
@@ -347,9 +353,9 @@ def move():
                     PuppyVelocityPub.publish(x=PuppyMove['x'], y=PuppyMove['y'], yaw_rate=PuppyMove['yaw_rate'])
                     shared_data[2] += shared_data[1].angular.z
                     
+                # If no line is detected, execute this loop
                 while line_centerx == -1:
                     PuppyMove['x'] = 0
-                    
                     
                     if shared_data[2] > 0:
                         PuppyMove['yaw_rate'] = math.radians(-15)
@@ -360,8 +366,10 @@ def move():
                     print("no line detected, waiting")
                     rospy.sleep(0.1)
             
-
+            # Reset the shared data
             shared_data[2] = 0
+
+            # If a line is detected, adjust the robot's movement based on the line's position
             if line_centerx != -1:
                 if abs(line_centerx - img_centerx) <= 50:
                     PuppyMove['x'] = 10
@@ -383,34 +391,32 @@ def move():
         else:
             time.sleep(0.001)
         if is_shutdown:break
-            
-# 运行子线程
-th = threading.Thread(target=move,daemon=True)
+
+# Start the move function in a separate daemon thread
+th = threading.Thread(target=move, daemon=True)
 # th.start()
 
-# 找出面积最大的轮廓
-# 参数为要比较的轮廓的列表
+# Find the contour with the largest area
+# Parameter is a list of contours to compare
 def getAreaMaxContour(contours):
     contour_area_temp = 0
     contour_area_max = 0
     area_max_contour = None
 
-    for c in contours:  # 历遍所有轮廓
-        contour_area_temp = math.fabs(cv2.contourArea(c))  # 计算轮廓面积
+    for c in contours:  # Iterate through all contours
+        contour_area_temp = math.fabs(cv2.contourArea(c))  # Calculate contour area
         if contour_area_temp > contour_area_max:
             contour_area_max = contour_area_temp
-            if contour_area_temp > 50:  # 只有在面积大于50时，最大面积的轮廓才是有效的，以过滤干扰
+            if contour_area_temp > 50:  # Only consider the largest contour valid if its area is greater than 50, to filter out noise
                 area_max_contour = c
 
-    return area_max_contour, contour_area_max  # 返回最大的轮廓
+    return area_max_contour, contour_area_max  # Return the largest contour
 
-# main logic is here 
-# need to look into and adjust
+# Main logic is here
+# Need to look into and adjust
 def lineCenterAnalysis(img):
     global draw_color, line_centerx
     size = (320, 240)
-    # size = (640, 480)
-    # img_copy = img.copy()
     img_h, img_w = img.shape[:2]
 
     if not __isRunning:
@@ -418,22 +424,21 @@ def lineCenterAnalysis(img):
 
     frame_resize = cv2.resize(img, size, interpolation=cv2.INTER_NEAREST)
     frame_gb = cv2.GaussianBlur(frame_resize, (3, 3), 3)      
-    frame_lab = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2LAB)  # 将图像转换到LAB空间
-
+    frame_lab = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2LAB)  # Convert image to LAB color space
 
     centroid_x_sum = 0
     weight_sum = 0
     center_ = []
     n = 0
-    #将图像分割成上中下三个部分，这样处理速度会更快，更精确
+
+    # Split the image into three parts (top, middle, and bottom) for faster and more accurate processing
     for r in roi:
         roi_h = roi_h_list[n]
         n += 1       
         if n <= 2:
             continue
         blobs = frame_gb[r[0]:r[1], r[2]:r[3]]
-        frame_lab = cv2.cvtColor(blobs, cv2.COLOR_BGR2LAB)  # 将图像转换到LAB空间
-        
+        frame_lab = cv2.cvtColor(blobs, cv2.COLOR_BGR2LAB)  # Convert image to LAB color space
 
         for i in color_range_list:
             if i in __target_color:
@@ -445,61 +450,62 @@ def lineCenterAnalysis(img):
                                               color_range_list[detect_color]['min'][2]),
                                              (color_range_list[detect_color]['max'][0],
                                               color_range_list[detect_color]['max'][1],
-                                              color_range_list[detect_color]['max'][2]))  #对原图像和掩模进行位运算                
-                opened = cv2.morphologyEx(frame_mask, cv2.MORPH_OPEN, np.ones((6, 6), np.uint8))  # 开运算
-                closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, np.ones((6, 6), np.uint8))  # 闭运算
-        #closed[:, 0:160] = 0
-        #closed[:, 480:640] = 0        
+                                              color_range_list[detect_color]['max'][2]))  # Perform bitwise operation on the original image and mask
+                opened = cv2.morphologyEx(frame_mask, cv2.MORPH_OPEN, np.ones((6, 6), np.uint8))  # Apply opening operation
+                closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, np.ones((6, 6), np.uint8))  # Apply closing operation
+
         if __target_color == '' or __target_color == 'None' or __target_color == None:
             line_centerx = -1
             return img
-        cnts = cv2.findContours(closed , cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_L1)[-2]#找出所有轮廓
-        cnt_large, area = getAreaMaxContour(cnts)#找到最大面积的轮廓
-        if cnt_large is not None:#如果轮廓不为空
-            rect = cv2.minAreaRect(cnt_large)#最小外接矩形
-            box = np.int0(cv2.boxPoints(rect))#最小外接矩形的四个顶点
+
+        cnts = cv2.findContours(closed , cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_L1)[-2] # Find all contours
+        cnt_large, area = getAreaMaxContour(cnts) # Find the contour with the largest area
+        if cnt_large is not None: # If the contour is not empty
+            rect = cv2.minAreaRect(cnt_large) # Minimum bounding rectangle
+            box = np.int0(cv2.boxPoints(rect)) # Four vertices of the minimum bounding rectangle
             for i in range(4):
                 box[i, 1] = box[i, 1] + (n - 1)*roi_h + roi[0][0]
                 box[i, 1] = int(Misc.map(box[i, 1], 0, size[1], 0, img_h))
-            for i in range(4):                
+            for i in range(4):
                 box[i, 0] = int(Misc.map(box[i, 0], 0, size[0], 0, img_w))
-                
-            cv2.drawContours(img, [box], -1, (0,0,255,255), 2)#画出四个点组成的矩形
-            
-            #获取矩形的对角点
+
+            cv2.drawContours(img, [box], -1, (0, 0, 255, 255), 2)  # Draw the rectangle formed by the four points
+
+            # Get the diagonal points of the rectangle
             pt1_x, pt1_y = box[0, 0], box[0, 1]
-            pt3_x, pt3_y = box[2, 0], box[2, 1]            
-            center_x, center_y = (pt1_x + pt3_x) / 2, (pt1_y + pt3_y) / 2#中心点       
-            cv2.circle(img, (int(center_x), int(center_y)), 5, (0,0,255), -1)#画出中心点
-            
-            center_.append([center_x, center_y])                        
-            #按权重不同对上中下三个中心点进行求和
+            pt3_x, pt3_y = box[2, 0], box[2, 1]
+            center_x, center_y = (pt1_x + pt3_x) / 2, (pt1_y + pt3_y) / 2  # Calculate the center point
+            cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 0, 255), -1)  # Draw the center point
+
+            center_.append([center_x, center_y])
+            # Calculate the weighted sum of the three center points (top, middle, bottom)
             centroid_x_sum += center_x * r[4]
             weight_sum += r[4]
 
-    if weight_sum is not 0:
-        #求最终得到的中心点
-        cv2.circle(img, (line_centerx, int(center_y)), 10, (0,255,255), -1)#画出中心点
-        line_centerx = int(centroid_x_sum / weight_sum)  
-        print('line_centerx',line_centerx)
+    if weight_sum != 0:
+        # Calculate the final center point
+        cv2.circle(img, (line_centerx, int(center_y)), 10, (0, 255, 255), -1)  # Draw the center point
+        line_centerx = int(centroid_x_sum / weight_sum)
+        print('line_centerx', line_centerx)
     else:
         line_centerx = -1
 
     return img
-
-
 def image_callback(ros_image):
     global lock
     
+    # Convert custom image message to an image
     image = np.ndarray(shape=(ros_image.height, ros_image.width, 3), dtype=np.uint8,
-                       buffer=ros_image.data)  # 将自定义图像消息转化为图像
+                       buffer=ros_image.data)
     frame = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    
-    # frame = cv2_img.copy()
+
+    # Create temporary and result frames for further processing
     frame_temp = frame.copy()
     frame_result = frame
     frame_result2 = frame
     
+    # Process the frame using lineCenterAnalysis and tagAnalysis functions
+    # Display the processed frames
     with lock:
         if __isRunning:
             frame_result = lineCenterAnalysis(frame)
@@ -509,9 +515,6 @@ def image_callback(ros_image):
             frame_result2 = tagAnalysis(frame_temp)
             cv2.imshow('image', frame_result2)
             cv2.waitKey(1)
-    # rgb_image = cv2.cvtColor(frame_result, cv2.COLOR_BGR2RGB).tobytes()
-    # ros_image.data = rgb_image
-    # image_pub.publish(ros_image)
 
 def enter_func(msg):
     global lock
@@ -519,7 +522,10 @@ def enter_func(msg):
     global __isRunning
     global org_image_sub_ed
 
+    # Log that the visual patrol has been entered
     rospy.loginfo("enter visual patrol")
+    
+    # Initialize the required variables and subscribe to the image topic
     with lock:
         init()
         if not org_image_sub_ed:
@@ -527,13 +533,11 @@ def enter_func(msg):
             image_sub = rospy.Subscriber('/usb_cam/image_raw', Image, image_callback)
             
     return [True, 'enter']
-
-    
-
 def start_running():
     global lock
     global __isRunning
 
+    # Log the start of running
     rospy.loginfo("start running")
     with lock:
         __isRunning = True
@@ -541,37 +545,25 @@ def start_running():
 def cleanup():
     global is_shutdown
     is_shutdown = True
+    # Stop the puppy and log the shutdown status
     PuppyVelocityPub.publish(x=0, y=0, yaw_rate=0)
     print('is_shutdown')
     
     
 if __name__ == "__main__":
     node = Combined_Control('combined_control_lidar')
-    # try:
-    #     rospy.spin()
-    # except Exception as e:
-    #     rospy.logerr(str(e))
 
-    
-    
-    # rospy.init_node(ROS_NODE_NAME, log_level=rospy.INFO)
+    # Handle cleanup on shutdown
     rospy.on_shutdown(cleanup)
     
+    # Get PuppyPose parameters and GaitConfig parameters
     PP = rospy.get_param('/puppy_control/PuppyPose')
     PuppyPose = PP['LookDown_20deg'].copy()
-    # PG = rospy.get_param('/puppy_control/GaitConfig')
-    # GaitConfig = PG['GaitConfigFast'].copy()
     GaitConfig = {'overlap_time':0.1, 'swing_time':0.15, 'clearance_time':0.0, 'z_clearance':3}
     
-    image_pub = rospy.Publisher('/%s/image_result'%ROS_NODE_NAME, Image, queue_size=1)  # register result image publisher
+    # Initialize publishers and subscribers
+    image_pub = rospy.Publisher('/%s/image_result'%ROS_NODE_NAME, Image, queue_size=1)
     rgb_pub = rospy.Publisher('/sensor/rgb_led', Led, queue_size=1)
-
-    # enter_srv = rospy.Service('/%s/enter'%ROS_NODE_NAME, Trigger, enter_func)
-    # exit_srv = rospy.Service('/%s/exit'%ROS_NODE_NAME, Trigger, exit_func)
-    # running_srv = rospy.Service('/%s/set_running'%ROS_NODE_NAME, SetBool, set_running)
-    # set_target_srv = rospy.Service('/%s/set_target'%ROS_NODE_NAME, SetTarget, set_target)
-    # heartbeat_srv = rospy.Service('/%s/heartbeat'%ROS_NODE_NAME, SetBool, heartbeat_srv_cb)
-
     PuppyGaitConfigPub = rospy.Publisher('/puppy_control/gait', Gait, queue_size=1)
     PuppyVelocityPub = rospy.Publisher('/puppy_control/velocity', Velocity, queue_size=1)
     PuppyPosePub = rospy.Publisher('/puppy_control/pose', Pose, queue_size=1)
@@ -580,10 +572,13 @@ if __name__ == "__main__":
     th.start()
     debug = True
     
+    # Enter the visual patrol function, start running, and set target color for debugging
     if debug:
         enter_func(1)
         start_running()
         __target_color = 'black'
+
+    # Main loop
     try:
         rospy.spin()
     except KeyboardInterrupt:
