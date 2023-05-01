@@ -11,6 +11,7 @@ The robot we use has eight motors on it as the movenment system, with four motor
 <img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Puppy-Pi.png" width=50% height=50%>
 
 Specs: 
+
 <img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Puppy-Pi_spec.png" width=70% height=50%>
 
 #
