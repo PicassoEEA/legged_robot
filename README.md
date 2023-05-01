@@ -4,10 +4,16 @@ This repository is for the senior design class team 2. PuppyPi, our autonomous-l
 
 #
 
-# Documentation
+**Documentation**
 
 * [Hardware documentation](https://github.com/PicassoEEA/legged_robot/tree/main/Hardware_Info)
 * [Sofware documentation](https://github.com/PicassoEEA/legged_robot/tree/main/Software_Info)
+
+#
+
+**Demo Video**
+Here are some demo videos of the performance of the robot dog:
+https://drive.google.com/drive/folders/1-3u4MFsINuggVaRiVoGgDMhkyEvuZgEe?usp=sharing
 
 #
 
