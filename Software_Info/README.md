@@ -30,21 +30,49 @@ The default network mode for the robot is AP Direct Connection. After initializa
 
 <img src="https://github.com/PicassoEEA/legged_robot/blob/main/Software_Info/VNC_2.png" width=70% height=70%>
 
+#
+
+**VNC Viewer Connection**
+
 After the installation of VNC Viewer, we can add the robot to the viewer by entering the default IP address of the Raspberry Pi: 192.168.149.1. 
 
 <img src="https://github.com/PicassoEEA/legged_robot/blob/main/Software_Info/VNC_3.png" width=100% height=100%>
 
 Then the VNC Viewer will prompt for authentication information, the Username is “pi” and the password is “raspberry”.
-#
 
-**OAK-D**
+<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Software_Info/VNC_4.png" width=50% height=50%>
 
-OAK-D is the ultimate camera for robotic vision developed by [Luxonis](https://www.luxonis.com). It perceives the world like a human by combining stereo depth camera and high-resolution color camera with an on-device Neural Network inferencing and Computer Vision capabilities. It uses USB-C for both power and USB3 connectivity. 
+After authentication, the Desktop interface of the Raspberry Pi will be displayed. Ignore the  pop-up warning message by clicking “OK”.
 
-<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/OAK-D.png" width=50% height=50%>
+<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Software_Info/VNC_5.png" width=50% height=50%>
 
-Specs:
+Once the connection with the VNC Viewer is successful, the Raspberry Pi desktop will be displayed as the screenshot shown below.
 
-<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/OAK-D_spec.png" width=70% height=50%>
+<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Software_Info/Pi_UI.png" width=70% height=70%>
+
+# 
+
+**Functions and Basic Commands**
+Functioins are directories are listed below:
+
+| Directory          | Function                                                    |
+| ------------------ | ----------------------------------------------------------- |
+| puppy_pi           |All source codes of functions, programs, and modified modules|
+| PuppyPi_PC_Software| Source code of PC software                                  |
+| hiwonder-toolbox   | Wi-Fi management tool                                       |
+
+Functions can be called and tested upon open command line terminal with the icon: 
+
+All testable functions are stored under `puppy_pi/src` and should be accessed by entering:
+```
+pi@raspberrypi:~ $ cd puppy_pi/src/
+```
+
+In order to run an individual script, the format for running should be `rosrun type_of_function  function_name.py`. 
+For instance, when running the QR code recognition function, the command should be:
+```
+pi@raspberrypi:~ $ rosrun puppy_standard_functions apriltag_detect_demo.py
+```
+
 
 
