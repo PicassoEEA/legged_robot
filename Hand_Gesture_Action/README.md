@@ -11,6 +11,6 @@ python3 gesture_action.py -e -g
 
 This is to access the detected gesture of the hand in the frame. 
 
-*
 An example image: 
-![example](http://url/to/img.png)https://github.com/PicassoEEA/legged_robot/blob/main/Hand_Gesture_Action/example.png
+
+![example](http://url/to/img.png)https://github.com/PicassoEEA/legged_robot/blob/main/Hand_Gesture_Action/example.png)
