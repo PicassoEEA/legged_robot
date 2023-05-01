@@ -53,7 +53,8 @@ Once the connection with the VNC Viewer is successful, the Raspberry Pi desktop 
 # 
 
 **Functions and Basic Commands**
-Functioins are directories are listed below:
+
+Functions are directories are listed below:
 
 | Directory          | Function                                                    |
 | ------------------ | ----------------------------------------------------------- |
