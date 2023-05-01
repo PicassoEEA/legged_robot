@@ -28,4 +28,26 @@ Specs:
 
 #
 
+**TOF Lidar**
+
+A Tof (Time of Flight) Lidar refers to using the speed of light (or even sound) to determine distance. It measures the time it takes for light (or sound) to leave the device, bounce off an object or plane, and return to the device, all divided by two reveals the distance from the device to the object or plane. We use this TOF in our project for detecting the obstacles in front of the dog to determine when and how to avoid it. 
+
+<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/TOF.png" width=50% height=50%>
+
+Specs:
+
+<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/TOF_spec.png" width=70% height=50%>
+
+#
+
+**OAK-D**
+
+OAK-D is the ultimate camera for robotic vision developed by [Luxonis](https://www.luxonis.com). It perceives the world like a human by combining stereo depth camera and high-resolution color camera with an on-device Neural Network inferencing and Computer Vision capabilities. It uses USB-C for both power and USB3 connectivity. 
+
+<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/OAK-D.png" width=50% height=50%>
+
+Specs:
+
+<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/OAK-D_spec.png" width=70% height=50%>
+
 
