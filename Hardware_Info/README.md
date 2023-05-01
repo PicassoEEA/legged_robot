@@ -11,17 +11,19 @@ The robot we use has eight motors on it as the movenment system, with four motor
 <img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Puppy-Pi.png" width=50% height=50%>
 
 Specs: 
-![Puppy_Pi_spec](https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Puppy-Pi_spec.png)
+<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Puppy-Pi_spec.png" width=70% height=50%>
 
 #
 
 **Raspeberry Pi 4B**
 
 The robot uses raspberry pi 4B (4GB) as its contral processor. We have two USB port for the connection of outer sensors like OAK-D camera. The Pi itself also have pins for connections of smaller sensors like the TOF lidar we utilize. This Pi also has ROS system pre-installed with it. 
+
 <img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Pi-4B.png" width=50% height=50%>
 
 Specs:
-![Pi-4B_spec](https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Pi_spec.png)
+
+<img src="https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Pi_spec.png" width=70% height=50%>
 
 #
 
