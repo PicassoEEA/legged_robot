@@ -16,12 +16,13 @@ Specs:
 #
 
 **Raspeberry Pi 4B**
+
 The robot uses raspberry pi 4B (4GB) as its contral processor. We have two USB port for the connection of outer sensors like OAK-D camera. The Pi itself also have pins for connections of smaller sensors like the TOF lidar we utilize. This Pi also has ROS system pre-installed with it. 
 ![Pi-4B](https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Pi-4B.png)
 
 Specs:
 ![Pi-4B_spec](https://github.com/PicassoEEA/legged_robot/blob/main/Hardware_Info/Pi_spec.png)
 
-
+#
 
 
