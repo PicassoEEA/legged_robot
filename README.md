@@ -7,6 +7,7 @@ This repository is for the senior design class team 2. PuppyPi, our autonomous-l
 **Documentation**
 
 * [Hardware documentation](https://github.com/PicassoEEA/legged_robot/tree/main/Hardware_Info)
+This hardware documentation will give a brief introduction of all hardware we have used in this project including Oak-d camera, Lidar, RGB camera, embedded battery and so on. All dimensions like the angle and fps of camera, weight of Oak-d, scope of lidar should be found in this documentation.
 * [Sofware documentation](https://github.com/PicassoEEA/legged_robot/tree/main/Software_Info)
 
 #
@@ -19,4 +20,4 @@ Here are some demo videos of the performance of the robot dog(https://drive.goog
 
 
 ## Team member
-Bowen Ma, Shun Zhang, Xiteng Yao, Yicheng Wang, Yihe Bi
+Bowen Ma, Shun Zhang, Xiteng Yao, Yichen Wang, Yihe Bi
