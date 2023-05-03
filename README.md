@@ -11,6 +11,8 @@ This repository is for the senior design class team 2. PuppyPi, our autonomous-l
 
 * [Sofware documentation](https://github.com/PicassoEEA/legged_robot/tree/main/Software_Info)
  This software documentation mainly describe the connection between raspberry pi and another control end(PC or app control). The tutorial of using VNC viewer and hotspot wifi to make that connection should be found here.
+* [Hand Gesture Action](https://github.com/PicassoEEA/legged_robot/tree/main/Hand_Gesture_Action)
+ This is an extra function run on Oak-d camera, which allows users to display certain kinds of gestures and make the robot perform specific movement. The Oak-d camera has to be connected to the raspberry pi of puppypi.
 
 #
 
