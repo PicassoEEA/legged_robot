@@ -32,8 +32,11 @@ In this directory, all of our progress reports and testing plans are uploaded. I
 
 **Attempts to start this project**
 
-1.
-2.
+1.Buy and be familiar with all hardwares documented in hardware info.
+2.Install VNC and try to connect it to the raspberry pi according to the tutorial in software info.
+3. Be familiar with the basic scripts in 463 files.
+4. Set up the scenario including line following, obstacle detection and QR scanning.
+5. Run AllInOne.py use command rosrun AllInOne.py
 
 #
 
