@@ -7,10 +7,10 @@ This repository is for the senior design class team 2. PuppyPi, our autonomous-l
 **Documentation**
 
 * [Hardware documentation](https://github.com/PicassoEEA/legged_robot/tree/main/Hardware_Info)
-* This hardware documentation will give a brief introduction of all hardware we have used in this project including Oak-d camera, Lidar, RGB camera, embedded battery, raspberry pi and so on. All dimensions like the angle and fps of camera, weight of Oak-d, scope of lidar should be found in this documentation. 
+ This hardware documentation will give a brief introduction of all hardware we have used in this project including Oak-d camera, Lidar, RGB camera, embedded battery, raspberry pi and so on. All dimensions like the angle and fps of camera, weight of Oak-d, scope of lidar should be found in this documentation. 
 
 * [Sofware documentation](https://github.com/PicassoEEA/legged_robot/tree/main/Software_Info)
-* This software documentation mainly describe the connection between raspberry pi and another control end(PC or app control). The tutorial of using VNC viewer and hotspot wifi to make that connection should be found here.
+ This software documentation mainly describe the connection between raspberry pi and another control end(PC or app control). The tutorial of using VNC viewer and hotspot wifi to make that connection should be found here.
 
 #
 
