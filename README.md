@@ -13,7 +13,8 @@ This repository is for the senior design class team 2. PuppyPi, our autonomous-l
  This software documentation mainly describe the connection between raspberry pi and another control end(PC or app control). The tutorial of using VNC viewer and hotspot wifi to make that connection should be found here.
 * [Hand Gesture Action](https://github.com/PicassoEEA/legged_robot/tree/main/Hand_Gesture_Action)
  This is an extra function run on Oak-d camera, which allows users to display certain kinds of gestures and make the robot perform specific movement. The Oak-d camera has to be connected to the raspberry pi of puppypi.
-
+* [463 Files](https://github.com/PicassoEEA/legged_robot/tree/main/463Files)
+  This is a folder of edited code which may help to understand different modules. Most edited scripts are stored under 463Files/src/test_files/scripts. AllInOne.py is the final integrated code includes the priority of different modules and runs all the functions in this single python script. apriltag_detect_demo.py is the python file for QR code scanning. lidar_edited.py is the file which includes both obstacle detection by lidar and obstacle avoidance algorithm using puppypi movement control.
 #
 
 **Demo Video**
